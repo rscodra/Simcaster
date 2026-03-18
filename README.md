@@ -171,16 +171,11 @@ Simcaster/
 
 ## Using with Claude Code
 
-Simcaster was built for developers who use [Claude Code](https://docs.anthropic.com/en/docs/claude-code) remotely from a phone. To let Claude build, install, and preview your iOS app autonomously:
+Simcaster was built for developers who use [Claude Code](https://docs.anthropic.com/en/docs/claude-code) remotely from a phone. Once set up, you can ask Claude to "build and preview the app" and it will boot the simulator, build your project, create a viewer session, and hand you a URL to open on your phone.
 
-1. Install and start Simcaster on your Mac (see [Quick start](#quick-start))
-2. Copy the template from [`claude-code-setup.md`](claude-code-setup.md) into your iOS project's `CLAUDE.md`
-3. Fill in your scheme name, bundle ID, and simulator UDID
-4. Set `SIMCASTER_TOKEN` in your shell environment so both the daemon and Claude Code can authenticate
+See [`claude-code-setup.md`](claude-code-setup.md) for full setup instructions — install Simcaster, start the daemon, and add the template to your iOS project's `CLAUDE.md`.
 
-Now when you ask Claude to "build and preview the app", it knows how to boot the simulator, build your project, create a viewer session, and hand you the URL.
-
-For remote access (phone not on the same network as your Mac), run a Cloudflare tunnel and set `SIMCASTER_URL` to the tunnel URL in your environment.
+For remote access (phone not on the same network as your Mac), run a Cloudflare tunnel and set `SIMCASTER_URL` to the tunnel URL.
 
 ## Known limitations
 
