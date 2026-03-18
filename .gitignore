@@ -1,0 +1,33 @@
+# Swift / SPM
+.build/
+.swiftpm/
+Package.resolved
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+
+# Compiled capture helper binaries (users compile these themselves)
+Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike
+CaptureHelper/CaptureHelper.app/Contents/MacOS/SimViewCapture
+
+# Old spike prototypes
+Spike/CaptureSpike.swift
+Spike/capture_spike
+
+# IDE
+.vscode/
+.idea/
+*.xcworkspace/
+
+# Internal development files
+CLAUDE.md
+DEVLOG.md
+simview_blueprint.md
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Runtime artifacts
+/tmp/simview_*

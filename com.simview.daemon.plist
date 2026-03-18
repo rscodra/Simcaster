@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.simview.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/rs/Desktop/Svelte/SimView/.build/debug/simviewerd</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>SIMVIEW_TOKEN</key>
+        <string>sv_live</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>/Users/rs/Desktop/Svelte/SimView</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/simviewerd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/simviewerd.log</string>
+</dict>
+</plist>
