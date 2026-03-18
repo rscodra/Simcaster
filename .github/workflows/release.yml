@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: macos-15  # Apple Silicon runner with Xcode 16 / Swift 6
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
 
@@ -55,13 +57,20 @@ jobs:
           shasum -a 256 "dist/simcaster-$VERSION-macos-universal.tar.gz" \
             | sed 's|dist/||' > dist/checksums.txt
 
-      - name: Create release
+      - name: Create or update release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=${GITHUB_REF_NAME}
-          gh release create "$VERSION" \
-            "dist/simcaster-$VERSION-macos-universal.tar.gz" \
-            dist/checksums.txt \
-            --title "$VERSION" \
-            --generate-notes
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" \
+              "dist/simcaster-$VERSION-macos-universal.tar.gz" \
+              dist/checksums.txt \
+              --clobber
+          else
+            gh release create "$VERSION" \
+              "dist/simcaster-$VERSION-macos-universal.tar.gz" \
+              dist/checksums.txt \
+              --title "$VERSION" \
+              --generate-notes
+          fi
