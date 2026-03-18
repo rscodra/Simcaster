@@ -5,7 +5,7 @@ Add these instructions to your iOS project's `CLAUDE.md` so Claude Code can buil
 ## Step 1: Install Simcaster (one-time)
 
 ```bash
-git clone https://github.com/<owner>/simcaster.git ~/.simcaster
+git clone https://github.com/rscodra/Simcaster.git ~/.simcaster
 cd ~/.simcaster
 swift build
 swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
@@ -55,7 +55,7 @@ If the daemon isn't running, start it:
 
 If Simcaster isn't installed, install it first:
 ```bash
-git clone https://github.com/<owner>/simcaster.git ~/.simcaster
+git clone https://github.com/rscodra/Simcaster.git ~/.simcaster
 cd ~/.simcaster && swift build
 swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
   CaptureHelper/SimcasterCapture.swift \

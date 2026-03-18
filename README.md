@@ -59,6 +59,21 @@ SIMCASTER_TOKEN=dev .build/debug/simcasterctl watch --udid <UDID>
 
 The `watch` command prints a URL. Open it on your phone to see the Simulator screen and interact with it.
 
+## Using with Claude Code
+
+Simcaster was built for developers who use [Claude Code](https://docs.anthropic.com/en/docs/claude-code) remotely from a phone. Once set up, you can ask Claude to "build and preview the app" and it will boot the simulator, build your project, create a viewer session, and hand you a URL to open on your phone.
+
+```bash
+# Install Simcaster (one-time)
+curl -fsSL https://raw.githubusercontent.com/rscodra/Simcaster/main/install.sh | bash
+
+# Add to your iOS project
+cd ~/YourApp
+simcasterctl init
+```
+
+This generates a `CLAUDE.md` with your scheme, bundle ID, and all the commands Claude needs. It auto-detects values from your `.xcodeproj`. See [`claude-code-setup.md`](claude-code-setup.md) for manual setup if you prefer.
+
 ## Remote access
 
 Simcaster binds to `0.0.0.0` by default, so it's accessible on your local network. For access over the internet, use a tunnel:
@@ -84,6 +99,7 @@ All commands support `--json` for machine-readable output. The CLI reads `SIMCAS
 | `simcasterctl boot --udid <UDID>` | Boot a simulator device |
 | `simcasterctl sessions` | List active viewer sessions |
 | `simcasterctl watch --udid <UDID>` | Create a viewer session and print the URL |
+| `simcasterctl init` | Generate a CLAUDE.md for the current project |
 
 ## API
 
@@ -168,14 +184,6 @@ Simcaster/
 │   └── CaptureSpike.app/            # Pre-built capture helper bundle
 └── com.simcaster.daemon.plist         # launchd plist for daemon auto-start
 ```
-
-## Using with Claude Code
-
-Simcaster was built for developers who use [Claude Code](https://docs.anthropic.com/en/docs/claude-code) remotely from a phone. Once set up, you can ask Claude to "build and preview the app" and it will boot the simulator, build your project, create a viewer session, and hand you a URL to open on your phone.
-
-See [`claude-code-setup.md`](claude-code-setup.md) for full setup instructions — install Simcaster, start the daemon, and add the template to your iOS project's `CLAUDE.md`.
-
-For remote access (phone not on the same network as your Mac), run a Cloudflare tunnel and set `SIMCASTER_URL` to the tunnel URL.
 
 ## Known limitations
 
