@@ -108,8 +108,11 @@ if [ ! -d "$INSTALL_DIR/.git" ]; then
 fi
 
 # Check shell profile for SIMCASTER_TOKEN
-SHELL_RC="$HOME/.zshrc"
-if [ -n "$BASH_VERSION" ]; then SHELL_RC="$HOME/.bashrc"; fi
+# Use $SHELL (login shell) not $BASH_VERSION, since curl|bash always runs in bash
+case "$SHELL" in
+    */bash) SHELL_RC="$HOME/.bashrc" ;;
+    *)      SHELL_RC="$HOME/.zshrc" ;;
+esac
 
 if ! grep -q "SIMCASTER_TOKEN" "$SHELL_RC" 2>/dev/null; then
     GENERATED_TOKEN=$(generate_token)
