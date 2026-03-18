@@ -1,3 +1,4 @@
+import Dispatch
 import Foundation
 import Hummingbird
 import HummingbirdWebSocket
@@ -366,4 +367,48 @@ let app = Application(
 print("simcasterd starting on http://\(daemonHost):\(daemonPort)")
 print("Viewer: http://\(lanIP):\(daemonPort)/sessions/<id>")
 print("For remote access: brew install cloudflared && cloudflared tunnel --url http://localhost:\(daemonPort)")
+
+// MARK: - Graceful Shutdown
+
+func performCleanup() {
+    print("\nsimcasterd shutting down…")
+
+    // Stop all active capture sessions
+    for session in sessionStore.sessions where session.state != "stopped" {
+        captureManager.stopCapture(sessionId: session.id)
+        sessionStore.update(session.id) { $0.state = "stopped" }
+    }
+
+    // Remove temp frame/cmd directories
+    let fm = FileManager.default
+    for dir in ["/tmp/simcaster_frames", "/tmp/simcaster_cmds"] {
+        try? fm.removeItem(atPath: dir)
+    }
+
+    // Remove stale temp files
+    for file in ["/tmp/simcaster_capture_args.json", "/tmp/simcaster_capture.log"] {
+        try? fm.removeItem(atPath: file)
+    }
+
+    print("simcasterd cleanup complete.")
+}
+
+// Ignore default signal handling so DispatchSource can catch them
+signal(SIGINT, SIG_IGN)
+signal(SIGTERM, SIG_IGN)
+
+let sigintSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
+sigintSource.setEventHandler {
+    performCleanup()
+    exit(0)
+}
+sigintSource.resume()
+
+let sigtermSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+sigtermSource.setEventHandler {
+    performCleanup()
+    exit(0)
+}
+sigtermSource.resume()
+
 try await app.run()

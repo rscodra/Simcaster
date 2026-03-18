@@ -8,6 +8,7 @@ final class CaptureManager: @unchecked Sendable {
     private let lock = NSLock()
     private var _running: [String: Bool] = [:]
     private var _restarting: [String: Bool] = [:]
+    private var _pids: [String: pid_t] = [:]
 
     let frameDir = "/tmp/simcaster_frames"
 
@@ -79,11 +80,7 @@ final class CaptureManager: @unchecked Sendable {
 
         // Kill any existing capture helper — `open -a` reuses a running .app,
         // so the new args file would be ignored if one is already running.
-        let killOld = Process()
-        killOld.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-        killOld.arguments = ["-f", "CaptureSpike"]
-        try? killOld.run()
-        killOld.waitUntilExit()
+        killCaptureProcess(sessionId: sessionId)
         usleep(500_000)
 
         // Clean stale frame for this session
@@ -108,6 +105,22 @@ final class CaptureManager: @unchecked Sendable {
 
         print("[\(sessionId)] open command completed, waiting for capture helper to start...")
 
+        // Track the CaptureSpike PID so we can kill by PID later
+        let pgrep = Process()
+        let pgrepPipe = Pipe()
+        pgrep.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        pgrep.arguments = ["-f", "CaptureSpike"]
+        pgrep.standardOutput = pgrepPipe
+        try? pgrep.run()
+        pgrep.waitUntilExit()
+        let pgrepOutput = String(data: pgrepPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if let pidValue = pgrepOutput.split(separator: "\n").last, let pid = pid_t(pidValue) {
+            lock.lock()
+            _pids[sessionId] = pid
+            lock.unlock()
+            print("[\(sessionId)] Tracked CaptureSpike PID: \(pid)")
+        }
+
         let fp = framePath(for: sessionId)
         let deadline = Date().addingTimeInterval(10)
         while Date() < deadline {
@@ -128,10 +141,7 @@ final class CaptureManager: @unchecked Sendable {
 
         sendCommand(sessionId: sessionId, command: Data("{\"type\":\"stop\"}".utf8))
 
-        let killProc = Process()
-        killProc.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-        killProc.arguments = ["-f", "CaptureSpike"]
-        try? killProc.run()
+        killCaptureProcess(sessionId: sessionId)
 
         // Clean up frame file
         try? FileManager.default.removeItem(atPath: framePath(for: sessionId))
@@ -146,6 +156,40 @@ final class CaptureManager: @unchecked Sendable {
         cmdData.append(Data("\n".utf8))
         let filename = "\(cmdDir)/\(UInt64(Date().timeIntervalSince1970 * 1_000_000))_\(arc4random()).cmd"
         try? cmdData.write(to: URL(fileURLWithPath: filename), options: .atomic)
+    }
+
+    // MARK: - Process Lifecycle
+
+    /// Kill the capture helper for a specific session by tracked PID, falling back to pkill.
+    private func killCaptureProcess(sessionId: String) {
+        lock.lock()
+        let trackedPid = _pids.removeValue(forKey: sessionId)
+        lock.unlock()
+
+        if let pid = trackedPid {
+            kill(pid, SIGTERM)
+        } else {
+            // Fallback: no tracked PID, use pkill
+            let killProc = Process()
+            killProc.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            killProc.arguments = ["-f", "CaptureSpike"]
+            try? killProc.run()
+            killProc.waitUntilExit()
+        }
+    }
+
+    /// Kill all tracked capture helper processes. Used for graceful shutdown.
+    func killAllCaptures() {
+        lock.lock()
+        let allPids = _pids
+        _pids.removeAll()
+        _running.removeAll()
+        lock.unlock()
+
+        for (sessionId, pid) in allPids {
+            print("[\(sessionId)] Killing CaptureSpike PID \(pid)")
+            kill(pid, SIGTERM)
+        }
     }
 
     // MARK: - Health Monitor

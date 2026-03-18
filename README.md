@@ -108,6 +108,11 @@ swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
 .build/debug/simcasterd &
 ```
 
+## Limitations
+
+- One simulator session at a time. Creating a new session stops the previous one.
+- US keyboard layout only; non-ASCII falls back to clipboard paste.
+
 ## Architecture
 
 The capture helper is a separate `.app` bundle because macOS ties Screen Recording and Accessibility permissions to the app's bundle identity. It communicates with the daemon via files in `/tmp` — JPEG frames and JSON command files. The daemon watches for new frames using kqueue and pushes them to browsers over WebSocket.

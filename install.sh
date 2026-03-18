@@ -44,6 +44,8 @@ install_prebuilt() {
 
         tar -xzf /tmp/simcaster-release.tar.gz -C "$INSTALL_DIR"
         rm /tmp/simcaster-release.tar.gz
+        # Remove macOS quarantine flag so Gatekeeper doesn't block the binaries
+        xattr -cr "$INSTALL_DIR" 2>/dev/null
         echo "Downloaded pre-built binaries ($LATEST)"
         return 0
     fi
