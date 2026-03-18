@@ -125,10 +125,7 @@ else
 fi
 
 echo ""
-echo "Done! Simcaster installed."
-echo ""
-echo "Run 'source $SHELL_RC' or open a new terminal to pick up the token,"
-echo "then run the setup wizard to configure macOS permissions:"
+echo "Done! Simcaster installed. Run these next:"
 echo ""
 echo "  source $SHELL_RC"
 echo "  simcasterctl setup"

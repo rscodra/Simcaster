@@ -40,7 +40,20 @@ func viewerHTML(sessionId: String, deviceName: String) -> String {
                 user-select: none; -webkit-user-select: none;
                 -webkit-user-drag: none; touch-action: none;
                 -webkit-touch-callout: none;
+                display: none;
             }
+            #frame.loaded { display: block; }
+            .loading {
+                display: flex; flex-direction: column; align-items: center;
+                justify-content: center; gap: 16px; color: #888;
+            }
+            .loading.hidden { display: none; }
+            .spinner {
+                width: 32px; height: 32px; border: 3px solid #333;
+                border-top-color: #888; border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+            @keyframes spin { to { transform: rotate(360deg); } }
             .bar {
                 display: flex; align-items: center; justify-content: center; gap: 16px;
                 padding: 10px 16px; background: #1a1a1a; flex-shrink: 0;
@@ -72,6 +85,10 @@ func viewerHTML(sessionId: String, deviceName: String) -> String {
             <span class="status wait" id="status">Connecting</span>
         </div>
         <div class="viewer" id="viewer">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Waiting for Simulator...</div>
+            </div>
             <img id="frame" alt="" draggable="false" />
             <span class="fps" id="fps"></span>
         </div>
@@ -92,7 +109,8 @@ func viewerHTML(sessionId: String, deviceName: String) -> String {
             const img = document.getElementById('frame');
             const statusEl = document.getElementById('status');
             const fpsEl = document.getElementById('fps');
-            let fc = 0, lt = Date.now();
+            const loadingEl = document.getElementById('loading');
+            let fc = 0, lt = Date.now(), firstFrame = true;
 
             // --- Frame delivery via WebSocket ---
             function connectWs() {
@@ -103,7 +121,7 @@ func viewerHTML(sessionId: String, deviceName: String) -> String {
                 ws.onopen = () => setStatus('ok', 'Live (WS)');
                 ws.onmessage = (e) => {
                     const u = URL.createObjectURL(e.data);
-                    img.onload = () => URL.revokeObjectURL(u);
+                    img.onload = () => { URL.revokeObjectURL(u); if (firstFrame) { firstFrame = false; img.classList.add('loaded'); loadingEl.classList.add('hidden'); } };
                     img.src = u;
                     fc++;
                     const n = Date.now();
@@ -111,6 +129,7 @@ func viewerHTML(sessionId: String, deviceName: String) -> String {
                 };
                 ws.onclose = () => {
                     setStatus('wait', 'Reconnecting');
+                    firstFrame = true; img.classList.remove('loaded'); loadingEl.classList.remove('hidden');
                     setTimeout(connectWs, 1000);
                 };
                 ws.onerror = () => ws.close();

@@ -245,7 +245,46 @@ struct Setup: ParsableCommand {
         print("  Have you granted Accessibility permission? (y/n) ", terminator: "")
         let accessAnswer = readLine()?.lowercased() ?? ""
 
-        if accessAnswer != "y" && accessAnswer != "yes" {
+        if accessAnswer == "y" || accessAnswer == "yes" {
+            // Kill and relaunch so it picks up the new permission
+            print("  Restarting capture helper to apply Accessibility permission...")
+            let killAccess = Process()
+            killAccess.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            killAccess.arguments = ["-f", "CaptureSpike"]
+            try? killAccess.run()
+            killAccess.waitUntilExit()
+            Thread.sleep(forTimeInterval: 1)
+
+            // Relaunch
+            let relaunchProc = Process()
+            relaunchProc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            relaunchProc.arguments = ["-a", helperApp, "--args", "--launched-by-daemon"]
+            try? relaunchProc.run()
+            relaunchProc.waitUntilExit()
+            Thread.sleep(forTimeInterval: 2)
+
+            // Verify by sending a harmless test command and checking it gets consumed
+            let cmdDir = "/tmp/simcaster_cmds"
+            try? fm.createDirectory(atPath: cmdDir, withIntermediateDirectories: true)
+            let testCmdPath = "\(cmdDir)/accessibility_test.cmd"
+            // Send a "noop" button press that won't affect anything visible
+            try? Data("{\"type\":\"button\",\"button\":\"shake\"}\n".utf8).write(to: URL(fileURLWithPath: testCmdPath), options: .atomic)
+
+            // Wait briefly and check if the command file was consumed
+            Thread.sleep(forTimeInterval: 2)
+            if fm.fileExists(atPath: testCmdPath) {
+                // Command file still there — helper couldn't process it (likely no Accessibility)
+                try? fm.removeItem(atPath: testCmdPath)
+                print("")
+                print("  ⚠ Accessibility doesn't seem to be active yet.")
+                print("    Touch input may not work. Try these steps:")
+                print("    1. Open System Settings > Privacy & Security > Accessibility")
+                print("    2. Remove CaptureSpike if listed, then re-add it")
+                print("    3. Re-run 'simcasterctl setup'")
+            } else {
+                print("  Accessibility is working!")
+            }
+        } else {
             print("")
             print("  You can grant it later — screen capture will work but")
             print("  touch input won't be forwarded to the Simulator.")
@@ -309,11 +348,43 @@ struct Setup: ParsableCommand {
         }
 
         print("")
-        print("  Setup complete! Next steps:")
-        print("")
-        print("    simcasterd &              # Start the daemon")
-        print("    simcasterctl devices      # List simulators")
-        print("    simcasterctl init         # Add to your iOS project")
+        if frameFound {
+            print("  Would you like to add Simcaster to an iOS project now?")
+            print("  Enter the path to your project (or press Enter to skip): ", terminator: "")
+            if let projectPath = readLine(), !projectPath.isEmpty {
+                let expandedPath = NSString(string: projectPath).expandingTildeInPath
+                let absPath = expandedPath.hasPrefix("/") ? expandedPath : fm.currentDirectoryPath + "/" + expandedPath
+                if fm.fileExists(atPath: absPath) {
+                    // Run init for the project
+                    do {
+                        let initCmd = try Init.parse(["--path", absPath])
+                        try initCmd.run()
+                        print("")
+                        print("  You're all set! Open that project in Claude Code and ask")
+                        print("  it to \"build and preview the app\" — it handles the rest.")
+                    } catch {
+                        print("  Failed to init project: \(error)")
+                        print("  You can run it manually: simcasterctl init --path \(absPath)")
+                    }
+                } else {
+                    print("  Directory not found: \(absPath)")
+                    print("  You can run it later: cd ~/YourApp && simcasterctl init")
+                }
+            } else {
+                print("  No problem. When you're ready:")
+                print("")
+                print("    cd ~/YourApp")
+                print("    simcasterctl init")
+                print("")
+                print("  Then open the project in Claude Code and ask it to")
+                print("  \"build and preview the app\" — it handles the rest.")
+            }
+        } else {
+            print("  You can still add Simcaster to a project:")
+            print("")
+            print("    cd ~/YourApp")
+            print("    simcasterctl init")
+        }
         print("")
     }
 }
@@ -407,9 +478,19 @@ struct Init: ParsableCommand {
         xcrun simctl install <UDID> ~/Library/Developer/Xcode/DerivedData/\(scheme)-*/Build/Products/Debug-iphonesimulator/\(scheme).app
         xcrun simctl launch <UDID> \(bundleId)
 
-        # Create a viewer session — give the user the URL it prints
+        # Create a viewer session
         simcasterctl watch --udid <UDID>
         ```
+
+        The watch command prints a local URL. For remote access, start a Cloudflare tunnel and give the user the tunnel URL instead:
+        ```bash
+        # Start tunnel if not already running (check with: pgrep cloudflared)
+        cloudflared tunnel --url http://localhost:4821 &>/tmp/cloudflared.log &
+        sleep 3
+        # Extract the tunnel URL from the log
+        grep -o 'https://[^ ]*\\.trycloudflare\\.com' /tmp/cloudflared.log | head -1
+        ```
+        Replace the host in the viewer URL with the tunnel URL. Always prefer giving the user the tunnel URL over the local IP.
 
         ### Rebuild After Changes
 
