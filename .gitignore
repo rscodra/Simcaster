@@ -20,7 +20,6 @@ Spike/capture_spike
 *.xcworkspace/
 
 # Internal development files
-CLAUDE.md
 DEVLOG.md
 simview_blueprint.md
 
