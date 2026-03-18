@@ -472,10 +472,9 @@ struct Init: ParsableCommand {
         simcasterd &
         ```
 
-        If `simcasterd` is not found, install Simcaster (takes 2-3 minutes — builds from source, do NOT set a timeout shorter than 5 minutes):
+        If `simcasterd` is not found, install Simcaster:
         ```bash
         curl -fsSL https://raw.githubusercontent.com/rscodra/Simcaster/main/install.sh | bash
-        source ~/.zshrc
         ```
 
         ### Build & Preview

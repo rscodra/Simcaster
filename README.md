@@ -33,11 +33,10 @@ Both are prompted automatically on first run. You can grant them in System Setti
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rscodra/Simcaster/main/install.sh | bash
-source ~/.zshrc
 simcasterctl setup
 ```
 
-The install script downloads pre-built universal binaries (arm64 + x86_64), symlinks them to `/usr/local/bin`, and writes a random `SIMCASTER_TOKEN` to your shell profile.
+The install script downloads pre-built universal binaries (arm64 + x86_64), symlinks them to `/usr/local/bin`, and generates a random auth token in `~/.simcaster/token`.
 
 The setup wizard walks you through granting the required macOS permissions (Screen Recording and Accessibility) and verifies everything works.
 

@@ -13,11 +13,11 @@ swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
   -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
 ```
 
-Add to your shell profile (`~/.zshrc`):
+The install script generates a token automatically in `~/.simcaster/token`. To set one manually:
 ```bash
-TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24)
-printf '\nexport SIMCASTER_HOME="$HOME/.simcaster"\nexport SIMCASTER_TOKEN=%s\n' "$TOKEN" >> ~/.zshrc
-source ~/.zshrc
+mkdir -p ~/.simcaster
+LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24 > ~/.simcaster/token
+chmod 600 ~/.simcaster/token
 ```
 
 ## Step 2: Start the daemon
