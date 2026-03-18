@@ -62,7 +62,7 @@ func findSimulatorWindow(matching name: String?) async throws -> SCWindow? {
 // MARK: - Capture Stream
 
 /// Fast content fingerprint: hashes the first 4KB, last 4KB, and length.
-/// Much cheaper than full SHA256 at 15fps while catching all real frame changes.
+/// Much cheaper than full SHA256 at high frame rates while catching all real frame changes.
 private func frameFingerprint(_ data: Data) -> UInt64 {
     var hasher = Hasher()
     hasher.combine(data.count)
@@ -95,7 +95,7 @@ class FrameStreamer: NSObject, SCStreamOutput, SCStreamDelegate {
         guard let jpegData = bitmapRep.representation(using: .jpeg, properties: [.compressionFactor: quality]) else { return }
 
         // Dedup: hash first 4KB + last 4KB + length for a fast content fingerprint.
-        // Full SHA256 is too slow at 15fps; this catches all real changes.
+        // Full SHA256 is too slow at high frame rates; this catches all real changes.
         lock.lock()
         let hash = frameFingerprint(jpegData)
         let isDupe = hash == lastFrameHash
