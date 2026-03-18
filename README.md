@@ -34,9 +34,12 @@ Both are prompted automatically on first run. You can grant them in System Setti
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rscodra/Simcaster/main/install.sh | bash
 source ~/.zshrc
+simcasterctl setup
 ```
 
-This downloads pre-built universal binaries (arm64 + x86_64), symlinks them to `/usr/local/bin`, and writes a random `SIMCASTER_TOKEN` to your shell profile. If no pre-built release is found, it falls back to building from source.
+The install script downloads pre-built universal binaries (arm64 + x86_64), symlinks them to `/usr/local/bin`, and writes a random `SIMCASTER_TOKEN` to your shell profile.
+
+The setup wizard walks you through granting the required macOS permissions (Screen Recording and Accessibility) and verifies everything works.
 
 ## Quick start
 
@@ -90,6 +93,7 @@ All commands support `--json` for machine-readable output. The CLI reads `SIMCAS
 
 | Command | Description |
 |---------|-------------|
+| `simcasterctl setup` | Set up macOS permissions and verify capture works |
 | `simcasterctl health` | Check if the daemon is running |
 | `simcasterctl devices` | List available iOS simulators |
 | `simcasterctl boot --udid <UDID>` | Boot a simulator device |

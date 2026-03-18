@@ -16,7 +16,15 @@ final class CaptureManager: @unchecked Sendable {
     init() {
         let daemonPath = CommandLine.arguments[0]
         let daemonDir = (daemonPath as NSString).deletingLastPathComponent
+        // Resolve symlinks so /usr/local/bin/simcasterd -> ~/.simcaster/simcasterd works
+        let resolvedDir = ((try? FileManager.default.destinationOfSymbolicLink(atPath: daemonPath)) ?? daemonPath as String)
+        let resolvedDirParent = (resolvedDir as NSString).deletingLastPathComponent
+        let home = NSHomeDirectory()
         let candidates = [
+            // Pre-built install: binary at ~/.simcaster/simcasterd
+            (resolvedDirParent as NSString).appendingPathComponent("Spike/CaptureSpike.app"),
+            "\(home)/.simcaster/Spike/CaptureSpike.app",
+            // Source build: binary at .build/debug/simcasterd
             (daemonDir as NSString).appendingPathComponent("../../Spike/CaptureSpike.app"),
             (daemonDir as NSString).appendingPathComponent("../../../Spike/CaptureSpike.app"),
             NSString(string: FileManager.default.currentDirectoryPath).appendingPathComponent("Spike/CaptureSpike.app"),

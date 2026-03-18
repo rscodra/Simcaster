@@ -10,7 +10,7 @@ struct SimcasterCTL: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "simcasterctl",
         abstract: "CLI for Simcaster daemon",
-        subcommands: [Health.self, Devices.self, Boot.self, Sessions.self, Watch.self, Init.self]
+        subcommands: [Health.self, Devices.self, Boot.self, Sessions.self, Watch.self, Init.self, Setup.self]
     )
 }
 
@@ -167,6 +167,154 @@ struct Watch: AsyncParsableCommand {
             printError("Is simcasterd running?")
             throw ExitCode.failure
         }
+    }
+}
+
+struct Setup: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Set up permissions and start the daemon")
+
+    func run() throws {
+        let fm = FileManager.default
+        let home = NSHomeDirectory()
+        let installDir = ProcessInfo.processInfo.environment["SIMCASTER_HOME"] ?? "\(home)/.simcaster"
+        let helperApp = "\(installDir)/Spike/CaptureSpike.app"
+        let helperBinary = "\(helperApp)/Contents/MacOS/CaptureSpike"
+
+        // Check capture helper exists
+        guard fm.fileExists(atPath: helperBinary) else {
+            printError("Capture helper not found at \(helperApp)")
+            printError("Run the install script first:")
+            printError("  curl -fsSL https://raw.githubusercontent.com/rscodra/Simcaster/main/install.sh | bash")
+            throw ExitCode.failure
+        }
+
+        print("")
+        print("  Simcaster Setup")
+        print("  ===============")
+        print("")
+        print("  The capture helper needs two macOS permissions:")
+        print("    1. Screen Recording  — to capture the Simulator window")
+        print("    2. Accessibility     — to inject touch and keyboard input")
+        print("")
+        print("  I'll launch the capture helper now to trigger the permission prompts.")
+        print("  Grant both permissions in System Settings when prompted.")
+        print("")
+        print("  IMPORTANT: After granting each permission, you may need to")
+        print("  quit and reopen the capture helper for it to take effect.")
+        print("  This setup command handles that automatically.")
+        print("")
+        print("  Press Enter to continue...")
+
+        _ = readLine()
+
+        // Step 1: Launch capture helper to trigger Screen Recording prompt
+        print("  [1/3] Launching capture helper for Screen Recording permission...")
+        print("        If a permission dialog appears, click 'Open System Settings'")
+        print("        and enable CaptureSpike under Screen Recording.")
+        print("")
+
+        let process1 = Process()
+        process1.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process1.arguments = ["-a", helperApp, "--args", "--permission-check"]
+        try process1.run()
+        process1.waitUntilExit()
+
+        // Give time for the app to launch and trigger the prompt
+        Thread.sleep(forTimeInterval: 3)
+
+        print("  Have you granted Screen Recording permission? (y/n) ", terminator: "")
+        let screenAnswer = readLine()?.lowercased() ?? ""
+
+        if screenAnswer == "y" || screenAnswer == "yes" {
+            // Kill and relaunch to pick up the new permission
+            print("  Restarting capture helper to apply Screen Recording permission...")
+            let kill1 = Process()
+            kill1.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            kill1.arguments = ["-f", "CaptureSpike"]
+            try? kill1.run()
+            kill1.waitUntilExit()
+            Thread.sleep(forTimeInterval: 1)
+        }
+
+        // Step 2: Accessibility
+        print("")
+        print("  [2/3] Checking Accessibility permission...")
+        print("        Go to System Settings > Privacy & Security > Accessibility")
+        print("        and enable CaptureSpike.")
+        print("")
+        print("  Have you granted Accessibility permission? (y/n) ", terminator: "")
+        let accessAnswer = readLine()?.lowercased() ?? ""
+
+        if accessAnswer != "y" && accessAnswer != "yes" {
+            print("")
+            print("  You can grant it later — screen capture will work but")
+            print("  touch input won't be forwarded to the Simulator.")
+        }
+
+        // Kill any leftover capture helper from permission check
+        let killFinal = Process()
+        killFinal.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        killFinal.arguments = ["-f", "CaptureSpike"]
+        try? killFinal.run()
+        killFinal.waitUntilExit()
+        Thread.sleep(forTimeInterval: 1)
+
+        // Step 3: Verify by doing a quick capture test
+        print("")
+        print("  [3/3] Verifying permissions...")
+
+        // Write a temp args file for the test
+        let testArgs: [String: String] = ["sessionId": "setup_test", "deviceName": ""]
+        let testArgsData = try JSONSerialization.data(withJSONObject: testArgs)
+        try testArgsData.write(to: URL(fileURLWithPath: "/tmp/simcaster_capture_args.json"))
+        try fm.createDirectory(atPath: "/tmp/simcaster_frames", withIntermediateDirectories: true)
+
+        // Launch and check if it produces a frame
+        let verifyProc = Process()
+        verifyProc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        verifyProc.arguments = ["-a", helperApp, "--args", "--launched-by-daemon"]
+        try verifyProc.run()
+        verifyProc.waitUntilExit()
+
+        // Wait for a frame
+        var frameFound = false
+        let framePath = "/tmp/simcaster_frames/setup_test.jpg"
+        for _ in 0..<20 {
+            Thread.sleep(forTimeInterval: 0.5)
+            if fm.fileExists(atPath: framePath) {
+                frameFound = true
+                break
+            }
+        }
+
+        // Clean up test frame
+        try? fm.removeItem(atPath: framePath)
+        let killTest = Process()
+        killTest.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        killTest.arguments = ["-f", "CaptureSpike"]
+        try? killTest.run()
+        killTest.waitUntilExit()
+
+        print("")
+        if frameFound {
+            print("  Screen capture is working!")
+        } else {
+            print("  Screen capture test failed.")
+            print("  This could mean:")
+            print("    - No Simulator window is open (open one with: open -a Simulator)")
+            print("    - Screen Recording permission wasn't granted yet")
+            print("    - The permission needs a logout/login to take effect")
+            print("")
+            print("  You can re-run 'simcasterctl setup' after fixing the issue.")
+        }
+
+        print("")
+        print("  Setup complete! Next steps:")
+        print("")
+        print("    simcasterd &              # Start the daemon")
+        print("    simcasterctl devices      # List simulators")
+        print("    simcasterctl init         # Add to your iOS project")
+        print("")
     }
 }
 
