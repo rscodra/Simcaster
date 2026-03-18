@@ -5,6 +5,10 @@ INSTALL_DIR="${SIMCASTER_HOME:-$HOME/.simcaster}"
 REPO="rscodra/Simcaster"
 REPO_URL="https://github.com/$REPO.git"
 
+generate_token() {
+    LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24
+}
+
 echo "Installing Simcaster to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 
@@ -108,10 +112,11 @@ SHELL_RC="$HOME/.zshrc"
 if [ -n "$BASH_VERSION" ]; then SHELL_RC="$HOME/.bashrc"; fi
 
 if ! grep -q "SIMCASTER_TOKEN" "$SHELL_RC" 2>/dev/null; then
+    GENERATED_TOKEN=$(generate_token)
     echo "" >> "$SHELL_RC"
     echo "# Simcaster" >> "$SHELL_RC"
-    echo "export SIMCASTER_TOKEN=dev" >> "$SHELL_RC"
-    echo "Added SIMCASTER_TOKEN=dev to $SHELL_RC"
+    echo "export SIMCASTER_TOKEN=$GENERATED_TOKEN" >> "$SHELL_RC"
+    echo "Added random SIMCASTER_TOKEN to $SHELL_RC"
 else
     echo "SIMCASTER_TOKEN already set in $SHELL_RC"
 fi

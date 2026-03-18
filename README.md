@@ -20,9 +20,8 @@ Phone Browser ←—WebSocket—→ simcasterd ←—file IPC—→ CaptureHelpe
 
 ## Requirements
 
-- macOS 14+ (Sonoma) — required for ScreenCaptureKit APIs
+- macOS 14+ (Sonoma)
 - Xcode 15+ with iOS Simulator
-- Swift 5.10+
 
 The capture helper needs two macOS permissions:
 - **Screen Recording** — to capture the Simulator window
@@ -30,31 +29,32 @@ The capture helper needs two macOS permissions:
 
 Both are prompted automatically on first run. You can grant them in System Settings > Privacy & Security.
 
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rscodra/Simcaster/main/install.sh | bash
+source ~/.zshrc
+```
+
+This downloads pre-built universal binaries (arm64 + x86_64), symlinks them to `/usr/local/bin`, and writes a random `SIMCASTER_TOKEN` to your shell profile. If no pre-built release is found, it falls back to building from source.
+
 ## Quick start
 
 ```bash
-# Build everything
-swift build
-
-# Compile the capture helper
-swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
-  CaptureHelper/SimcasterCapture.swift \
-  -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
-
-# Start the daemon (set a token so the CLI can authenticate)
-SIMCASTER_TOKEN=dev .build/debug/simcasterd &
+# Start the daemon
+simcasterd &
 
 # List available simulators
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl devices
+simcasterctl devices
 
 # Boot one
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl boot --udid <UDID>
+simcasterctl boot --udid <UDID>
 
 # Open Simulator.app (needed for window capture)
 open -a Simulator
 
 # Create a viewer session
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl watch --udid <UDID>
+simcasterctl watch --udid <UDID>
 ```
 
 The `watch` command prints a URL. Open it on your phone to see the Simulator screen and interact with it.
@@ -64,10 +64,6 @@ The `watch` command prints a URL. Open it on your phone to see the Simulator scr
 Simcaster was built for developers who use [Claude Code](https://docs.anthropic.com/en/docs/claude-code) remotely from a phone. Once set up, you can ask Claude to "build and preview the app" and it will boot the simulator, build your project, create a viewer session, and hand you a URL to open on your phone.
 
 ```bash
-# Install Simcaster (one-time)
-curl -fsSL https://raw.githubusercontent.com/rscodra/Simcaster/main/install.sh | bash
-
-# Add to your iOS project
 cd ~/YourApp
 simcasterctl init
 ```
@@ -145,10 +141,11 @@ A launchd plist is included for auto-starting the daemon:
 
 ```bash
 cp com.simcaster.daemon.plist ~/Library/LaunchAgents/
+plutil -insert EnvironmentVariables -xml "<dict><key>SIMCASTER_TOKEN</key><string>$SIMCASTER_TOKEN</string></dict>" ~/Library/LaunchAgents/com.simcaster.daemon.plist
 launchctl load ~/Library/LaunchAgents/com.simcaster.daemon.plist
 ```
 
-Edit the plist to update the binary path and token before loading.
+The packaged plist already points at `/usr/local/bin/simcasterd`. If you built from source somewhere else, update `ProgramArguments[0]` before loading.
 
 ## Architecture notes
 
@@ -159,6 +156,27 @@ Edit the plist to update the binary path and token before loading.
 **Why WebSocket?** The first version polled for frames over HTTP. Switching to server-push via WebSocket cut perceived latency by 30–40%, mostly by eliminating the round-trip overhead that compounds over tunneled connections.
 
 **Why kqueue directory watching?** The daemon uses `DispatchSource` (backed by kqueue vnode events) to watch the frame directory for changes instead of polling. This reacts to new frames as soon as the capture helper writes them. The frame files are written atomically (write to temp file, then rename), so we watch the directory rather than the file — `rename()` replaces the inode, which would invalidate a per-file watcher after the first write.
+
+## Building from source
+
+If you prefer to build from source or want to contribute:
+
+```bash
+git clone https://github.com/rscodra/Simcaster.git
+cd Simcaster
+swift build
+
+# Compile the capture helper
+swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
+  CaptureHelper/SimcasterCapture.swift \
+  -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
+
+# Run
+export SIMCASTER_TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24)
+.build/debug/simcasterd &
+```
+
+Requires Swift 5.10+. First build takes 2–3 minutes due to dependencies.
 
 ## Project structure
 
@@ -179,10 +197,10 @@ Simcaster/
 │   └── SimcasterCLI/
 │       └── main.swift               # CLI tool
 ├── CaptureHelper/
-│   └── SimcasterCapture.swift         # ScreenCaptureKit capture + input injection
+│   └── SimcasterCapture.swift       # ScreenCaptureKit capture + input injection
 ├── Spike/
-│   └── CaptureSpike.app/            # Pre-built capture helper bundle
-└── com.simcaster.daemon.plist         # launchd plist for daemon auto-start
+│   └── CaptureSpike.app/            # Capture helper bundle (compile binary yourself)
+└── com.simcaster.daemon.plist       # launchd plist for daemon auto-start
 ```
 
 ## Known limitations
@@ -200,16 +218,6 @@ These would meaningfully improve the experience but aren't blockers for daily us
 - **Video codec streaming** — H.264/H.265 over WebSocket would compress dramatically better than per-frame JPEG, especially during motion
 - **Multiple simultaneous sessions** — frame paths are already per-session; the remaining work is launching separate capture helper instances per simulator window
 - **Non-US keyboard layouts** — the keycode table currently maps US QWERTY only
-
-## Building the capture helper
-
-The capture helper is compiled separately from the SPM package because it needs to live inside an `.app` bundle:
-
-```bash
-swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
-  CaptureHelper/SimcasterCapture.swift \
-  -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
-```
 
 ## License
 

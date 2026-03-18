@@ -26,16 +26,17 @@ To test the full flow, you'll also need to grant the capture helper Screen Recor
 
 Terminal 1 — start the daemon:
 ```bash
-SIMCASTER_TOKEN=dev .build/debug/simcasterd
+TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24)
+SIMCASTER_TOKEN="$TOKEN" .build/debug/simcasterd
 ```
 
 Terminal 2 — interact via CLI:
 ```bash
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl health
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl devices
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl boot --udid <UDID>
+SIMCASTER_TOKEN="$TOKEN" .build/debug/simcasterctl health
+SIMCASTER_TOKEN="$TOKEN" .build/debug/simcasterctl devices
+SIMCASTER_TOKEN="$TOKEN" .build/debug/simcasterctl boot --udid <UDID>
 open -a Simulator
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl watch --udid <UDID>
+SIMCASTER_TOKEN="$TOKEN" .build/debug/simcasterctl watch --udid <UDID>
 ```
 
 Open the printed URL in a browser to verify the viewer works.

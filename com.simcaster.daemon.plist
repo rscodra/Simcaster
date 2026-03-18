@@ -6,15 +6,8 @@
     <string>com.simcaster.daemon</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/rs/Desktop/Svelte/SimView/.build/debug/simcasterd</string>
+        <string>/usr/local/bin/simcasterd</string>
     </array>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>SIMCASTER_TOKEN</key>
-        <string>sv_live</string>
-    </dict>
-    <key>WorkingDirectory</key>
-    <string>/Users/rs/Desktop/Svelte/SimView</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>

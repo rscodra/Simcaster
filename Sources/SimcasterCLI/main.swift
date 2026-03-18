@@ -234,7 +234,7 @@ struct Init: ParsableCommand {
 
         If the daemon isn't running, start it:
         ```bash
-        export SIMCASTER_TOKEN="${SIMCASTER_TOKEN:-dev}"
+        export SIMCASTER_TOKEN="${SIMCASTER_TOKEN:-$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24)}"
         simcasterd &
         ```
 

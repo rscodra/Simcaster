@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.simview.capture-spike</string>
+    <string>com.simcaster.capture-spike</string>
     <key>CFBundleName</key>
     <string>CaptureSpike</string>
     <key>CFBundleExecutable</key>
@@ -13,6 +13,6 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>SimView needs screen capture to mirror the iOS Simulator display.</string>
+    <string>Simcaster needs screen capture to mirror the iOS Simulator display.</string>
 </dict>
 </plist>

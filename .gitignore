@@ -8,7 +8,8 @@ DerivedData/
 
 # Compiled capture helper binaries (users compile these themselves)
 Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike
-CaptureHelper/CaptureHelper.app/Contents/MacOS/SimViewCapture
+CaptureHelper/CaptureHelper.app/Contents/MacOS/*
+!CaptureHelper/CaptureHelper.app/Contents/MacOS/.gitkeep
 
 # Old spike prototypes
 Spike/CaptureSpike.swift

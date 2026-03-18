@@ -15,8 +15,9 @@ swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
 
 Add to your shell profile (`~/.zshrc`):
 ```bash
-export SIMCASTER_HOME="$HOME/.simcaster"
-export SIMCASTER_TOKEN=dev
+TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24)
+printf '\nexport SIMCASTER_HOME="$HOME/.simcaster"\nexport SIMCASTER_TOKEN=%s\n' "$TOKEN" >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ## Step 2: Start the daemon
@@ -28,7 +29,8 @@ $SIMCASTER_HOME/.build/debug/simcasterd &
 Or install as a launchd service for auto-start:
 ```bash
 cp ~/.simcaster/com.simcaster.daemon.plist ~/Library/LaunchAgents/
-# Edit the plist to set the correct binary path and token
+plutil -replace ProgramArguments.0 -string "$HOME/.simcaster/.build/debug/simcasterd" ~/Library/LaunchAgents/com.simcaster.daemon.plist
+plutil -insert EnvironmentVariables -xml "<dict><key>SIMCASTER_TOKEN</key><string>$SIMCASTER_TOKEN</string></dict>" ~/Library/LaunchAgents/com.simcaster.daemon.plist
 launchctl load ~/Library/LaunchAgents/com.simcaster.daemon.plist
 ```
 
@@ -60,7 +62,8 @@ cd ~/.simcaster && swift build
 swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
   CaptureHelper/SimcasterCapture.swift \
   -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
-SIMCASTER_TOKEN=dev ~/.simcaster/.build/debug/simcasterd &
+export SIMCASTER_TOKEN="${SIMCASTER_TOKEN:-$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24)}"
+~/.simcaster/.build/debug/simcasterd &
 ```
 
 ### Build & Preview

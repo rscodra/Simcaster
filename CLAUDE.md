@@ -20,8 +20,9 @@ swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
 ## Run locally
 
 ```bash
-SIMCASTER_TOKEN=dev .build/debug/simcasterd &
-SIMCASTER_TOKEN=dev .build/debug/simcasterctl devices
+TOKEN=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 24)
+SIMCASTER_TOKEN="$TOKEN" .build/debug/simcasterd &
+SIMCASTER_TOKEN="$TOKEN" .build/debug/simcasterctl devices
 ```
 
 ## Project layout
