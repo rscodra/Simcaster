@@ -107,26 +107,31 @@ if [ ! -d "$INSTALL_DIR/.git" ]; then
     rm -rf /tmp/simcaster-clone
 fi
 
-# Check shell profile for SIMCASTER_TOKEN
-# Use $SHELL (login shell) not $BASH_VERSION, since curl|bash always runs in bash
+# Generate and store token in ~/.simcaster/token (used by daemon + CLI directly)
+TOKEN_FILE="$INSTALL_DIR/token"
+if [ ! -f "$TOKEN_FILE" ]; then
+    GENERATED_TOKEN=$(generate_token)
+    echo "$GENERATED_TOKEN" > "$TOKEN_FILE"
+    chmod 600 "$TOKEN_FILE"
+    echo "Generated auth token in $TOKEN_FILE"
+else
+    echo "Auth token already exists in $TOKEN_FILE"
+fi
+
+# Also export in shell profile so $SIMCASTER_TOKEN is available for curl/scripts
 case "$SHELL" in
     */bash) SHELL_RC="$HOME/.bashrc" ;;
     *)      SHELL_RC="$HOME/.zshrc" ;;
 esac
 
 if ! grep -q "SIMCASTER_TOKEN" "$SHELL_RC" 2>/dev/null; then
-    GENERATED_TOKEN=$(generate_token)
     echo "" >> "$SHELL_RC"
     echo "# Simcaster" >> "$SHELL_RC"
-    echo "export SIMCASTER_TOKEN=$GENERATED_TOKEN" >> "$SHELL_RC"
-    echo "Added random SIMCASTER_TOKEN to $SHELL_RC"
-else
-    echo "SIMCASTER_TOKEN already set in $SHELL_RC"
+    echo "export SIMCASTER_TOKEN=$(cat "$TOKEN_FILE")" >> "$SHELL_RC"
 fi
 
 echo ""
-echo "Done! Simcaster installed. Run these next:"
+echo "Done! Simcaster installed. Run this next:"
 echo ""
-echo "  source $SHELL_RC"
 echo "  simcasterctl setup"
 echo ""

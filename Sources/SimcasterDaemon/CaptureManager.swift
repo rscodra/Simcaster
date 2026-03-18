@@ -77,6 +77,15 @@ final class CaptureManager: @unchecked Sendable {
 
         try FileManager.default.createDirectory(atPath: frameDir, withIntermediateDirectories: true)
 
+        // Kill any existing capture helper — `open -a` reuses a running .app,
+        // so the new args file would be ignored if one is already running.
+        let killOld = Process()
+        killOld.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        killOld.arguments = ["-f", "CaptureSpike"]
+        try? killOld.run()
+        killOld.waitUntilExit()
+        usleep(500_000)
+
         // Clean stale frame for this session
         try? FileManager.default.removeItem(atPath: framePath(for: sessionId))
         try? FileManager.default.removeItem(atPath: "/tmp/simcaster_capture.log")

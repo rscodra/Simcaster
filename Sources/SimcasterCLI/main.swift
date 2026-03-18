@@ -3,7 +3,16 @@ import Foundation
 import SimcasterCore
 
 let daemonBase = ProcessInfo.processInfo.environment["SIMCASTER_URL"] ?? "http://127.0.0.1:4821"
-let daemonToken = ProcessInfo.processInfo.environment["SIMCASTER_TOKEN"]
+let daemonToken: String? = {
+    if let t = ProcessInfo.processInfo.environment["SIMCASTER_TOKEN"], !t.isEmpty {
+        return t
+    }
+    let tokenPath = NSHomeDirectory() + "/.simcaster/token"
+    if let fileToken = try? String(contentsOfFile: tokenPath, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines), !fileToken.isEmpty {
+        return fileToken
+    }
+    return nil
+}()
 
 @main
 struct SimcasterCTL: AsyncParsableCommand {
@@ -209,7 +218,7 @@ struct Setup: ParsableCommand {
 
         // Step 1: Launch capture helper to trigger Screen Recording prompt
         print("  [1/3] Launching capture helper for Screen Recording permission...")
-        print("        If a permission dialog appears, click 'Open System Settings'")
+        print("        A permission dialog should appear — click 'Open System Settings'")
         print("        and enable CaptureSpike under Screen Recording.")
         print("")
 
@@ -236,11 +245,17 @@ struct Setup: ParsableCommand {
             Thread.sleep(forTimeInterval: 1)
         }
 
-        // Step 2: Accessibility
+        // Step 2: Accessibility — open the settings pane directly
         print("")
-        print("  [2/3] Checking Accessibility permission...")
-        print("        Go to System Settings > Privacy & Security > Accessibility")
-        print("        and enable CaptureSpike.")
+        print("  [2/3] Accessibility permission...")
+        print("        Opening System Settings — find CaptureSpike and enable it.")
+
+        let openSettings = Process()
+        openSettings.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        openSettings.arguments = ["x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"]
+        try? openSettings.run()
+        openSettings.waitUntilExit()
+
         print("")
         print("  Have you granted Accessibility permission? (y/n) ", terminator: "")
         let accessAnswer = readLine()?.lowercased() ?? ""

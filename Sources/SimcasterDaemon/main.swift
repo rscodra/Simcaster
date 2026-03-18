@@ -10,8 +10,13 @@ let daemonPort = Int(ProcessInfo.processInfo.environment["SIMCASTER_PORT"] ?? "4
 let lanIP = getLanIP() ?? "127.0.0.1"
 
 let effectiveToken: String = {
-    if let t = ProcessInfo.processInfo.environment["SIMCASTER_TOKEN"] {
+    if let t = ProcessInfo.processInfo.environment["SIMCASTER_TOKEN"], !t.isEmpty {
         return t
+    }
+    // Fall back to token file
+    let tokenPath = NSHomeDirectory() + "/.simcaster/token"
+    if let fileToken = try? String(contentsOfFile: tokenPath, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines), !fileToken.isEmpty {
+        return fileToken
     }
     return String(UUID().uuidString.prefix(12)).lowercased()
 }()
