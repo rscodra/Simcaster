@@ -20,7 +20,24 @@ install_prebuilt() {
     ASSET_URL="https://github.com/$REPO/releases/download/$LATEST/simcaster-$LATEST-macos-universal.tar.gz"
     echo "Downloading $LATEST..."
 
+    CHECKSUM_URL="https://github.com/$REPO/releases/download/$LATEST/checksums.txt"
+
     if curl -fsSL "$ASSET_URL" -o "/tmp/simcaster-release.tar.gz" 2>/dev/null; then
+        # Verify checksum if available
+        if curl -fsSL "$CHECKSUM_URL" -o "/tmp/simcaster-checksums.txt" 2>/dev/null; then
+            EXPECTED=$(grep "simcaster-$LATEST-macos-universal.tar.gz" /tmp/simcaster-checksums.txt | awk '{print $1}')
+            ACTUAL=$(shasum -a 256 /tmp/simcaster-release.tar.gz | awk '{print $1}')
+            rm /tmp/simcaster-checksums.txt
+            if [ -n "$EXPECTED" ] && [ "$EXPECTED" != "$ACTUAL" ]; then
+                echo "Checksum verification failed!"
+                echo "  Expected: $EXPECTED"
+                echo "  Got:      $ACTUAL"
+                rm /tmp/simcaster-release.tar.gz
+                return 1
+            fi
+            echo "Checksum verified."
+        fi
+
         tar -xzf /tmp/simcaster-release.tar.gz -C "$INSTALL_DIR"
         rm /tmp/simcaster-release.tar.gz
         echo "Downloaded pre-built binaries ($LATEST)"

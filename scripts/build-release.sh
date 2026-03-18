@@ -58,10 +58,20 @@ cp "$PROJECT_DIR/com.simcaster.daemon.plist" "$BUILD_DIR/"
 
 tar -czf "$ARCHIVE" -C "$BUILD_DIR" simcasterd simcasterctl Spike com.simcaster.daemon.plist
 
+# Generate checksums
+CHECKSUM_FILE="$BUILD_DIR/checksums.txt"
+shasum -a 256 "$ARCHIVE" | sed "s|$BUILD_DIR/||" > "$CHECKSUM_FILE"
+
 echo ""
 echo "Built: $ARCHIVE"
 echo ""
 ls -lh "$ARCHIVE"
 echo ""
+echo "Checksum:"
+cat "$CHECKSUM_FILE"
+echo ""
 echo "Contents:"
 tar -tzf "$ARCHIVE"
+echo ""
+echo "To create a release:"
+echo "  gh release create $VERSION $ARCHIVE $CHECKSUM_FILE --title \"$VERSION\""
