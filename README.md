@@ -1,21 +1,21 @@
-# SimView
+# Simcaster
 
-Preview your iOS Simulator on a phone. SimView streams the Simulator screen over WebSocket and lets you interact with it through touch — tap, swipe, pinch, type — from any browser.
+Preview your iOS Simulator on a phone. Simcaster streams the Simulator screen over WebSocket and lets you interact with it through touch — tap, swipe, pinch, type — from any browser.
 
 Built for developers who work remotely from a mobile device and need real-time visual feedback from Xcode builds running on a Mac elsewhere.
 
 ## How it works
 
-SimView has three components:
+Simcaster has three components:
 
-1. **simviewerd** — a local HTTP + WebSocket server (Hummingbird 2) that manages simulator sessions and streams frames to connected viewers
-2. **simviewctl** — a CLI for managing the daemon, booting simulators, and creating viewer sessions
+1. **simcasterd** — a local HTTP + WebSocket server (Hummingbird 2) that manages simulator sessions and streams frames to connected viewers
+2. **simcasterctl** — a CLI for managing the daemon, booting simulators, and creating viewer sessions
 3. **CaptureHelper** — a background macOS app that uses ScreenCaptureKit to capture the Simulator window and CGEvent to inject touch/keyboard input
 
 The capture helper writes JPEG frames to a per-session file in a temp directory. The daemon watches the file using macOS filesystem events (kqueue) and pushes new frames over WebSocket to any connected browser. Input flows the other way: the browser sends touch coordinates, the daemon writes command files, the capture helper reads them and injects the corresponding mouse/keyboard events into the Simulator.
 
 ```
-Phone Browser ←—WebSocket—→ simviewerd ←—file IPC—→ CaptureHelper ←—CGEvent—→ Simulator
+Phone Browser ←—WebSocket—→ simcasterd ←—file IPC—→ CaptureHelper ←—CGEvent—→ Simulator
 ```
 
 ## Requirements
@@ -38,30 +38,30 @@ swift build
 
 # Compile the capture helper
 swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
-  CaptureHelper/SimViewCapture.swift \
+  CaptureHelper/SimcasterCapture.swift \
   -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
 
 # Start the daemon (set a token so the CLI can authenticate)
-SIMVIEW_TOKEN=dev .build/debug/simviewerd &
+SIMCASTER_TOKEN=dev .build/debug/simcasterd &
 
 # List available simulators
-SIMVIEW_TOKEN=dev .build/debug/simviewctl devices
+SIMCASTER_TOKEN=dev .build/debug/simcasterctl devices
 
 # Boot one
-SIMVIEW_TOKEN=dev .build/debug/simviewctl boot --udid <UDID>
+SIMCASTER_TOKEN=dev .build/debug/simcasterctl boot --udid <UDID>
 
 # Open Simulator.app (needed for window capture)
 open -a Simulator
 
 # Create a viewer session
-SIMVIEW_TOKEN=dev .build/debug/simviewctl watch --udid <UDID>
+SIMCASTER_TOKEN=dev .build/debug/simcasterctl watch --udid <UDID>
 ```
 
 The `watch` command prints a URL. Open it on your phone to see the Simulator screen and interact with it.
 
 ## Remote access
 
-SimView binds to `0.0.0.0` by default, so it's accessible on your local network. For access over the internet, use a tunnel:
+Simcaster binds to `0.0.0.0` by default, so it's accessible on your local network. For access over the internet, use a tunnel:
 
 ```bash
 # Using Cloudflare's free tunnel
@@ -75,21 +75,21 @@ Expect 7–10 fps over a Cloudflare tunnel during active screen changes, and the
 
 ## CLI reference
 
-All commands support `--json` for machine-readable output. The CLI reads `SIMVIEW_TOKEN` from the environment to authenticate with the daemon.
+All commands support `--json` for machine-readable output. The CLI reads `SIMCASTER_TOKEN` from the environment to authenticate with the daemon.
 
 | Command | Description |
 |---------|-------------|
-| `simviewctl health` | Check if the daemon is running |
-| `simviewctl devices` | List available iOS simulators |
-| `simviewctl boot --udid <UDID>` | Boot a simulator device |
-| `simviewctl sessions` | List active viewer sessions |
-| `simviewctl watch --udid <UDID>` | Create a viewer session and print the URL |
+| `simcasterctl health` | Check if the daemon is running |
+| `simcasterctl devices` | List available iOS simulators |
+| `simcasterctl boot --udid <UDID>` | Boot a simulator device |
+| `simcasterctl sessions` | List active viewer sessions |
+| `simcasterctl watch --udid <UDID>` | Create a viewer session and print the URL |
 
 ## API
 
 Base URL: `http://localhost:4821`
 
-Authentication: pass the token as `?token=<TOKEN>` or `Authorization: Bearer <TOKEN>`. The token is set via the `SIMVIEW_TOKEN` environment variable (defaults to a random value on each launch). Viewer URLs use a session-scoped token that only grants access to that session's viewer, frame stream, and input endpoints.
+Authentication: pass the token as `?token=<TOKEN>` or `Authorization: Bearer <TOKEN>`. The token is set via the `SIMCASTER_TOKEN` environment variable (defaults to a random value on each launch). Viewer URLs use a session-scoped token that only grants access to that session's viewer, frame stream, and input endpoints.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -118,25 +118,25 @@ Coordinates are normalized to 0.0–1.0 relative to the Simulator window.
 
 | Environment variable | Default | Description |
 |---------------------|---------|-------------|
-| `SIMVIEW_TOKEN` | random | Auth token for API access (used by both daemon and CLI) |
-| `SIMVIEW_HOST` | `0.0.0.0` | Bind address (daemon) |
-| `SIMVIEW_PORT` | `4821` | Listen port (daemon) |
-| `SIMVIEW_URL` | `http://127.0.0.1:4821` | Daemon base URL (CLI only) |
+| `SIMCASTER_TOKEN` | random | Auth token for API access (used by both daemon and CLI) |
+| `SIMCASTER_HOST` | `0.0.0.0` | Bind address (daemon) |
+| `SIMCASTER_PORT` | `4821` | Listen port (daemon) |
+| `SIMCASTER_URL` | `http://127.0.0.1:4821` | Daemon base URL (CLI only) |
 
 ## Running as a service
 
 A launchd plist is included for auto-starting the daemon:
 
 ```bash
-cp com.simview.daemon.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.simview.daemon.plist
+cp com.simcaster.daemon.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.simcaster.daemon.plist
 ```
 
 Edit the plist to update the binary path and token before loading.
 
 ## Architecture notes
 
-**Why file-based IPC?** The capture helper runs as a separate `.app` bundle because ScreenCaptureKit and Accessibility TCC permissions are bound to the app's code signing identity and bundle. The daemon can't hold these permissions as a bare executable. File-based IPC keeps the boundary simple and debuggable — you can inspect `/tmp/simview_frames/<session>.jpg` to check if frames are flowing, or drop a `.cmd` file into `/tmp/simview_cmds/` to test input injection independently.
+**Why file-based IPC?** The capture helper runs as a separate `.app` bundle because ScreenCaptureKit and Accessibility TCC permissions are bound to the app's code signing identity and bundle. The daemon can't hold these permissions as a bare executable. File-based IPC keeps the boundary simple and debuggable — you can inspect `/tmp/simcaster_frames/<session>.jpg` to check if frames are flowing, or drop a `.cmd` file into `/tmp/simcaster_cmds/` to test input injection independently.
 
 **Why not screen mirroring?** Tools like `simctl io recordVideo` or `xcrun simctl io screenshot` are too slow for interactive use. ScreenCaptureKit gives us 15 fps with low overhead, and capturing the window directly means we get exactly what's on screen with no extra encoding step.
 
@@ -147,12 +147,12 @@ Edit the plist to update the binary path and token before loading.
 ## Project structure
 
 ```
-SimView/
+Simcaster/
 ├── Package.swift
 ├── Sources/
-│   ├── SimViewCore/
+│   ├── SimcasterCore/
 │   │   └── Contracts.swift          # Shared request/response types
-│   ├── SimViewDaemon/
+│   ├── SimcasterDaemon/
 │   │   ├── main.swift               # Routes and server startup
 │   │   ├── SessionStore.swift       # Thread-safe session storage
 │   │   ├── CaptureManager.swift     # Capture helper lifecycle and IPC
@@ -160,13 +160,13 @@ SimView/
 │   │   ├── FrameWatcher.swift       # kqueue-based frame file watcher
 │   │   ├── Viewer.swift             # Mobile-first HTML/JS viewer
 │   │   └── Helpers.swift            # simctl, JSON encoding, LAN IP, escaping
-│   └── SimViewCLI/
+│   └── SimcasterCLI/
 │       └── main.swift               # CLI tool
 ├── CaptureHelper/
-│   └── SimViewCapture.swift         # ScreenCaptureKit capture + input injection
+│   └── SimcasterCapture.swift         # ScreenCaptureKit capture + input injection
 ├── Spike/
 │   └── CaptureSpike.app/            # Pre-built capture helper bundle
-└── com.simview.daemon.plist         # launchd plist for daemon auto-start
+└── com.simcaster.daemon.plist         # launchd plist for daemon auto-start
 ```
 
 ## Known limitations
@@ -191,7 +191,7 @@ The capture helper is compiled separately from the SPM package because it needs 
 
 ```bash
 swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
-  CaptureHelper/SimViewCapture.swift \
+  CaptureHelper/SimcasterCapture.swift \
   -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
 ```
 

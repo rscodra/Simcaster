@@ -3,11 +3,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "SimView",
+    name: "Simcaster",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "simviewerd", targets: ["SimViewDaemon"]),
-        .executable(name: "simviewctl", targets: ["SimViewCLI"]),
+        .executable(name: "simcasterd", targets: ["SimcasterDaemon"]),
+        .executable(name: "simcasterctl", targets: ["SimcasterCLI"]),
     ],
     dependencies: [
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
@@ -16,21 +16,21 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SimViewCore",
+            name: "SimcasterCore",
             dependencies: []
         ),
         .executableTarget(
-            name: "SimViewDaemon",
+            name: "SimcasterDaemon",
             dependencies: [
-                "SimViewCore",
+                "SimcasterCore",
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdWebSocket", package: "hummingbird-websocket"),
             ]
         ),
         .executableTarget(
-            name: "SimViewCLI",
+            name: "SimcasterCLI",
             dependencies: [
-                "SimViewCore",
+                "SimcasterCore",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),

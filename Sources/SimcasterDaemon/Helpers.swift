@@ -1,6 +1,6 @@
 import Foundation
 import Hummingbird
-import SimViewCore
+import SimcasterCore
 
 // MARK: - simctl
 
@@ -29,7 +29,7 @@ struct SimctlOutput: Decodable {
 
 func listDevices() throws -> (devices: [Device], raw: SimctlOutput) {
     let result = try runSimctl(["list", "devices", "available", "-j"])
-    guard result.status == 0 else { throw SimViewError.simctlFailed("list devices") }
+    guard result.status == 0 else { throw SimcasterError.simctlFailed("list devices") }
     let simctl = try JSONDecoder().decode(SimctlOutput.self, from: result.stdout)
     var devices: [Device] = []
     for (runtimeKey, runtimeDevices) in simctl.devices {
@@ -48,7 +48,7 @@ func listDevices() throws -> (devices: [Device], raw: SimctlOutput) {
     return (devices, simctl)
 }
 
-enum SimViewError: Error {
+enum SimcasterError: Error {
     case simctlFailed(String)
     case deviceNotFound(String)
 }

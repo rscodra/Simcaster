@@ -1,15 +1,15 @@
 import ArgumentParser
 import Foundation
-import SimViewCore
+import SimcasterCore
 
-let daemonBase = ProcessInfo.processInfo.environment["SIMVIEW_URL"] ?? "http://127.0.0.1:4821"
-let daemonToken = ProcessInfo.processInfo.environment["SIMVIEW_TOKEN"]
+let daemonBase = ProcessInfo.processInfo.environment["SIMCASTER_URL"] ?? "http://127.0.0.1:4821"
+let daemonToken = ProcessInfo.processInfo.environment["SIMCASTER_TOKEN"]
 
 @main
-struct SimViewCTL: AsyncParsableCommand {
+struct SimcasterCTL: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "simviewctl",
-        abstract: "CLI for SimView daemon",
+        commandName: "simcasterctl",
+        abstract: "CLI for Simcaster daemon",
         subcommands: [Health.self, Devices.self, Boot.self, Sessions.self, Watch.self]
     )
 }
@@ -56,7 +56,7 @@ struct Health: AsyncParsableCommand {
             throw error
         } catch {
             printError("Could not connect to daemon at \(daemonBase)")
-            printError("Is simviewerd running?")
+            printError("Is simcasterd running?")
             throw ExitCode.failure
         }
     }
@@ -88,7 +88,7 @@ struct Devices: AsyncParsableCommand {
             throw error
         } catch {
             printError("Could not connect to daemon at \(daemonBase)")
-            printError("Is simviewerd running?")
+            printError("Is simcasterd running?")
             throw ExitCode.failure
         }
     }
@@ -124,7 +124,7 @@ struct Boot: AsyncParsableCommand {
             throw error
         } catch {
             printError("Could not connect to daemon at \(daemonBase)")
-            printError("Is simviewerd running?")
+            printError("Is simcasterd running?")
             throw ExitCode.failure
         }
     }
@@ -164,7 +164,7 @@ struct Watch: AsyncParsableCommand {
             throw error
         } catch {
             printError("Could not connect to daemon at \(daemonBase)")
-            printError("Is simviewerd running?")
+            printError("Is simcasterd running?")
             throw ExitCode.failure
         }
     }
@@ -195,7 +195,7 @@ struct Sessions: AsyncParsableCommand {
             throw error
         } catch {
             printError("Could not connect to daemon at \(daemonBase)")
-            printError("Is simviewerd running?")
+            printError("Is simcasterd running?")
             throw ExitCode.failure
         }
     }

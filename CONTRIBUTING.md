@@ -1,4 +1,4 @@
-# Contributing to SimView
+# Contributing to Simcaster
 
 Contributions are welcome. This document covers the development setup and areas where help is most useful.
 
@@ -6,12 +6,12 @@ Contributions are welcome. This document covers the development setup and areas 
 
 ```bash
 git clone <repo-url>
-cd SimView
+cd Simcaster
 swift build
 
 # Also compile the capture helper
 swiftc -o Spike/CaptureSpike.app/Contents/MacOS/CaptureSpike \
-  CaptureHelper/SimViewCapture.swift \
+  CaptureHelper/SimcasterCapture.swift \
   -framework AppKit -framework ScreenCaptureKit -framework CoreGraphics
 ```
 
@@ -26,16 +26,16 @@ To test the full flow, you'll also need to grant the capture helper Screen Recor
 
 Terminal 1 — start the daemon:
 ```bash
-SIMVIEW_TOKEN=dev .build/debug/simviewerd
+SIMCASTER_TOKEN=dev .build/debug/simcasterd
 ```
 
 Terminal 2 — interact via CLI:
 ```bash
-SIMVIEW_TOKEN=dev .build/debug/simviewctl health
-SIMVIEW_TOKEN=dev .build/debug/simviewctl devices
-SIMVIEW_TOKEN=dev .build/debug/simviewctl boot --udid <UDID>
+SIMCASTER_TOKEN=dev .build/debug/simcasterctl health
+SIMCASTER_TOKEN=dev .build/debug/simcasterctl devices
+SIMCASTER_TOKEN=dev .build/debug/simcasterctl boot --udid <UDID>
 open -a Simulator
-SIMVIEW_TOKEN=dev .build/debug/simviewctl watch --udid <UDID>
+SIMCASTER_TOKEN=dev .build/debug/simcasterctl watch --udid <UDID>
 ```
 
 Open the printed URL in a browser to verify the viewer works.
@@ -44,9 +44,9 @@ Open the printed URL in a browser to verify the viewer works.
 
 | Directory | What it does |
 |-----------|-------------|
-| `Sources/SimViewCore/` | Shared Codable types used by both daemon and CLI |
-| `Sources/SimViewDaemon/` | Hummingbird HTTP+WS server, split across multiple files |
-| `Sources/SimViewCLI/` | ArgumentParser CLI that talks to the daemon |
+| `Sources/SimcasterCore/` | Shared Codable types used by both daemon and CLI |
+| `Sources/SimcasterDaemon/` | Hummingbird HTTP+WS server, split across multiple files |
+| `Sources/SimcasterCLI/` | ArgumentParser CLI that talks to the daemon |
 | `CaptureHelper/` | Standalone ScreenCaptureKit + CGEvent capture app |
 | `Spike/CaptureSpike.app/` | Pre-built `.app` bundle for the capture helper |
 
@@ -82,7 +82,7 @@ There are currently no automated tests. Good starting points:
 
 ### Non-US keyboard layouts
 
-The keycode table in `SimViewCapture.swift` maps US QWERTY only. Supporting other layouts would require either detecting the active input source or expanding the mapping table.
+The keycode table in `SimcasterCapture.swift` maps US QWERTY only. Supporting other layouts would require either detecting the active input source or expanding the mapping table.
 
 ## Code style
 

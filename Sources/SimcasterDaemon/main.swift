@@ -1,16 +1,16 @@
 import Foundation
 import Hummingbird
 import HummingbirdWebSocket
-import SimViewCore
+import SimcasterCore
 
 // MARK: - Config
 
-let daemonHost = ProcessInfo.processInfo.environment["SIMVIEW_HOST"] ?? "0.0.0.0"
-let daemonPort = Int(ProcessInfo.processInfo.environment["SIMVIEW_PORT"] ?? "4821") ?? 4821
+let daemonHost = ProcessInfo.processInfo.environment["SIMCASTER_HOST"] ?? "0.0.0.0"
+let daemonPort = Int(ProcessInfo.processInfo.environment["SIMCASTER_PORT"] ?? "4821") ?? 4821
 let lanIP = getLanIP() ?? "127.0.0.1"
 
 let effectiveToken: String = {
-    if let t = ProcessInfo.processInfo.environment["SIMVIEW_TOKEN"] {
+    if let t = ProcessInfo.processInfo.environment["SIMCASTER_TOKEN"] {
         return t
     }
     return String(UUID().uuidString.prefix(12)).lowercased()
@@ -353,7 +353,7 @@ let app = Application(
     configuration: .init(address: .hostname(daemonHost, port: daemonPort))
 )
 
-print("simviewerd starting on http://\(daemonHost):\(daemonPort)")
+print("simcasterd starting on http://\(daemonHost):\(daemonPort)")
 print("Viewer: http://\(lanIP):\(daemonPort)/sessions/<id>")
 print("For remote access: brew install cloudflared && cloudflared tunnel --url http://localhost:\(daemonPort)")
 try await app.run()

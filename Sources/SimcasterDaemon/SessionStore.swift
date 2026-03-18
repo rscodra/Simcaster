@@ -1,5 +1,5 @@
 import Foundation
-import SimViewCore
+import SimcasterCore
 
 /// Thread-safe in-memory store for active sessions.
 ///

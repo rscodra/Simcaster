@@ -9,7 +9,7 @@ final class CaptureManager: @unchecked Sendable {
     private var _running: [String: Bool] = [:]
     private var _restarting: [String: Bool] = [:]
 
-    let frameDir = "/tmp/simview_frames"
+    let frameDir = "/tmp/simcaster_frames"
 
     let helperAppPath: String
 
@@ -38,15 +38,15 @@ final class CaptureManager: @unchecked Sendable {
             }
         }
         // Command files
-        let cmdDir = "/tmp/simview_cmds"
+        let cmdDir = "/tmp/simcaster_cmds"
         if let files = try? fm.contentsOfDirectory(atPath: cmdDir) {
             for file in files where file.hasSuffix(".cmd") {
                 try? fm.removeItem(atPath: "\(cmdDir)/\(file)")
             }
         }
         // Stale args/log
-        try? fm.removeItem(atPath: "/tmp/simview_capture_args.json")
-        try? fm.removeItem(atPath: "/tmp/simview_capture.log")
+        try? fm.removeItem(atPath: "/tmp/simcaster_capture_args.json")
+        try? fm.removeItem(atPath: "/tmp/simcaster_capture.log")
     }
 
     /// Path to the frame file for a given session.
@@ -71,12 +71,12 @@ final class CaptureManager: @unchecked Sendable {
 
         // Clean stale frame for this session
         try? FileManager.default.removeItem(atPath: framePath(for: sessionId))
-        try? FileManager.default.removeItem(atPath: "/tmp/simview_capture.log")
+        try? FileManager.default.removeItem(atPath: "/tmp/simcaster_capture.log")
 
         // Write args file for the helper — includes sessionId for per-session frame path
         let args: [String: String] = ["deviceName": deviceName, "sessionId": sessionId]
         let argsData = try JSONSerialization.data(withJSONObject: args)
-        try argsData.write(to: URL(fileURLWithPath: "/tmp/simview_capture_args.json"))
+        try argsData.write(to: URL(fileURLWithPath: "/tmp/simcaster_capture_args.json"))
 
         print("[\(sessionId)] Launching capture helper: \(helperAppPath)")
         let process = Process()
@@ -123,7 +123,7 @@ final class CaptureManager: @unchecked Sendable {
     }
 
     func sendCommand(sessionId: String, command: Data) {
-        let cmdDir = "/tmp/simview_cmds"
+        let cmdDir = "/tmp/simcaster_cmds"
         try? FileManager.default.createDirectory(atPath: cmdDir, withIntermediateDirectories: true)
         var cmdData = command
         cmdData.append(Data("\n".utf8))

@@ -1,7 +1,7 @@
-// SimView Capture Helper
+// Simcaster Capture Helper
 // Runs as an .app bundle for TCC permissions.
-// Writes JPEG frames to /tmp/simview_frames/latest.jpg
-// Reads JSON commands from /tmp/simview_commands.json (poll)
+// Writes JPEG frames to /tmp/simcaster_frames/latest.jpg
+// Reads JSON commands from /tmp/simcaster_commands.json (poll)
 
 import AppKit
 import CommonCrypto
@@ -14,8 +14,8 @@ import ScreenCaptureKit
 // MARK: - Frame Output
 
 let stderr = FileHandle.standardError
-let frameDir = "/tmp/simview_frames"
-let commandDir = "/tmp/simview_cmds"
+let frameDir = "/tmp/simcaster_frames"
+let commandDir = "/tmp/simcaster_cmds"
 /// Set from args file at startup; falls back to "latest" for backwards compat
 var activeSessionId = "latest"
 
@@ -23,7 +23,7 @@ func log(_ msg: String) {
     let line = "[\(ISO8601DateFormatter().string(from: Date()))] \(msg)\n"
     stderr.write(Data(line.utf8))
     // Also write to log file since stderr may not be visible when launched via `open`
-    let logPath = "/tmp/simview_capture.log"
+    let logPath = "/tmp/simcaster_capture.log"
     if let handle = FileHandle(forWritingAtPath: logPath) {
         handle.seekToEndOfFile()
         handle.write(Data(line.utf8))
@@ -133,7 +133,7 @@ func startCapture(window: SCWindow, fps: Int = 15) async throws {
     activeStream = stream
     activeStreamer = streamer
 
-    let queue = DispatchQueue(label: "com.simview.capture", qos: .userInteractive)
+    let queue = DispatchQueue(label: "com.simcaster.capture", qos: .userInteractive)
     try stream.addStreamOutput(streamer, type: .screen, sampleHandlerQueue: queue)
     try await stream.startCapture()
     log("Capture started for \"\(window.title ?? "unknown")\" at \(fps) fps")
@@ -579,7 +579,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         var deviceName: String? = nil
-        let argsFile = "/tmp/simview_capture_args.json"
+        let argsFile = "/tmp/simcaster_capture_args.json"
         if let data = FileManager.default.contents(atPath: argsFile),
            let args = try? JSONSerialization.jsonObject(with: data) as? [String: String] {
             deviceName = args["deviceName"]
