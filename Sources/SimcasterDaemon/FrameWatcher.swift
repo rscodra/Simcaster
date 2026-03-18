@@ -22,7 +22,7 @@ final class FrameWatcher: @unchecked Sendable {
 
     func frames() -> AsyncStream<Data> {
         AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            var lastSize: Int = 0
+            var lastSize: Int = -1
             let queue = DispatchQueue(label: "com.simcaster.framewatcher")
             let fileName = (self.path as NSString).lastPathComponent
 

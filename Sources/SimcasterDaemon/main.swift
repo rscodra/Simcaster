@@ -339,6 +339,11 @@ router.ws("ws/sessions/:id/frames") { inbound, outbound, context in
     let id = context.request.uri.string.split(separator: "/").dropFirst().first(where: { $0.hasPrefix("sess_") }).map(String.init) ?? ""
     guard sessionStore.get(id) != nil else { return }
 
+    // Send the current frame immediately so the client doesn't wait for the next change
+    if let currentFrame = captureManager.getFrame(id) {
+        try await outbound.write(.binary(ByteBuffer(data: currentFrame)))
+    }
+
     let watcher = FrameWatcher(path: captureManager.framePath(for: id))
     for await frame in watcher.frames() {
         try await outbound.write(.binary(ByteBuffer(data: frame)))
