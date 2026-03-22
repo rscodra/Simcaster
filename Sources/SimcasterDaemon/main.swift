@@ -132,7 +132,7 @@ router.post("api/sessions") { request, _ in
     }
 
     let sessionId = "sess_\(UUID().uuidString.prefix(8).lowercased())"
-    let viewerToken = "vt_\(UUID().uuidString.prefix(16).lowercased())"
+    let viewerToken = "vt_\(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(16).lowercased())"
     let formatter = ISO8601DateFormatter()
     var session = Session(
         id: sessionId,
