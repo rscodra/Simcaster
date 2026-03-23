@@ -132,6 +132,62 @@ if ! grep -q "SIMCASTER_TOKEN" "$SHELL_RC" 2>/dev/null; then
     echo "export SIMCASTER_TOKEN=$(cat "$TOKEN_FILE")" >> "$SHELL_RC"
 fi
 
+# Append Simcaster section to CLAUDE.md if it exists but doesn't mention Simcaster
+CLAUDE_MD="CLAUDE.md"
+if [ -f "$CLAUDE_MD" ] && ! grep -qi "simcaster" "$CLAUDE_MD" 2>/dev/null; then
+    echo "" >> "$CLAUDE_MD"
+    cat >> "$CLAUDE_MD" <<'CLAUDE_BLOCK'
+
+## Simcaster (remote simulator viewer)
+
+Simcaster streams iOS Simulator screens to mobile devices over LAN.
+
+```bash
+# Start daemon
+simcasterd &
+
+# List simulators
+simcasterctl devices
+
+# Create a session (returns a viewer URL to open on your phone)
+simcasterctl start --udid <UDID>
+
+# Stop a session
+simcasterctl stop --session <SESSION_ID>
+```
+
+- Daemon binds to `0.0.0.0:7890` by default
+- Auth token is in `~/.simcaster/token` and exported as `$SIMCASTER_TOKEN`
+- Viewer URLs contain a scoped token — safe to share without exposing the master token
+CLAUDE_BLOCK
+    echo "Added Simcaster section to CLAUDE.md"
+elif [ ! -f "$CLAUDE_MD" ]; then
+    cat > "$CLAUDE_MD" <<'CLAUDE_BLOCK'
+## Simcaster (remote simulator viewer)
+
+Simcaster streams iOS Simulator screens to mobile devices over LAN.
+
+```bash
+# Start daemon
+simcasterd &
+
+# List simulators
+simcasterctl devices
+
+# Create a session (returns a viewer URL to open on your phone)
+simcasterctl start --udid <UDID>
+
+# Stop a session
+simcasterctl stop --session <SESSION_ID>
+```
+
+- Daemon binds to `0.0.0.0:7890` by default
+- Auth token is in `~/.simcaster/token` and exported as `$SIMCASTER_TOKEN`
+- Viewer URLs contain a scoped token — safe to share without exposing the master token
+CLAUDE_BLOCK
+    echo "Created CLAUDE.md with Simcaster instructions"
+fi
+
 echo ""
 echo "Done! Simcaster installed. Run this next:"
 echo ""
